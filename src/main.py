@@ -70,7 +70,7 @@ def build_embedding(model, tokenizer , model_dim , dictionary_file , output_file
             input_ids = torch.tensor(tokens).unsqueeze(0)  # Batch size 1
             outputs = model(input_ids)
             last_hidden_states = outputs[0]  # The last hidden-state is the first element of the output tuple    
-            for x in torch.flatten(last_hidden_states[0 , 1 , :]).tolist(): 
+            for x in torch.flatten(last_hidden_states[0 , -1 , :]).tolist(): 
                 out.write('{:.4f} '.format(x)) 
             out.write('\r\n') 
 
