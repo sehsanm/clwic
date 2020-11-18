@@ -4,6 +4,8 @@ from  collections import namedtuple
 from  transformers  import XLMRobertaModel, AutoTokenizer
 import torch
 
+import argparse
+
 def extract_dictionary(dictionary , output_file):
     with open(output_file, 'w' , encoding='utf8') as f: 
         for i in range(len(dictionary)): 
@@ -76,4 +78,15 @@ def build_embedding(model, tokenizer , model_dim , dictionary_file , output_file
 
 
 if __name__ == '__main__' : 
-    step_2()
+    parser = argparse.ArgumentParser(description='Preprocessing Data')
+    parser.add_argument("--step", type=int, default=2 , help="Processing Step to be applied")
+
+
+    # parse parameters
+    params = parser.parse_args()
+
+    if params.step == 1:
+        step_1() 
+    elif params.step == 2:
+        step_2() 
+
