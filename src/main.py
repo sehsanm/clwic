@@ -52,13 +52,13 @@ def build_embedding(model, tokenizer , model_dim , dictionary_file , output_file
     print('Processing file ' , dictionary_file)
     dictionary = [] 
     with open(dictionary_file , 'r' , encoding='utf8') as f: 
-        token = f.readline() 
+        token = f.readline().strip()  
         while token:
             dictionary.append(token) 
             token = f.readline().strip()  
     print(len(dictionary) , ' Tokens detected')
     with open(output_file , 'w' , encoding='utf8') as out: 
-        out.write(str(len(dictionary)) +  ' ' + str(model_dim) + '\r\n') 
+        out.write(str(len(dictionary)) +  ' ' + str(model_dim) + '\n') 
         cnt = 0 
         for token in dictionary: 
             cnt += 1 
@@ -72,7 +72,7 @@ def build_embedding(model, tokenizer , model_dim , dictionary_file , output_file
             last_hidden_states = outputs[0]  # The last hidden-state is the first element of the output tuple    
             for x in torch.flatten(last_hidden_states[0 , -1 , :]).tolist(): 
                 out.write('{:.4f} '.format(x)) 
-            out.write('\r\n') 
+            out.write('\n') 
 
             
 
