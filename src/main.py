@@ -1,16 +1,85 @@
 from muse.utils import load_embeddings 
 from  collections import namedtuple
-
+import  preprocess as prep
 from  transformers  import XLMRobertaModel, AutoTokenizer
 import torch
 
 import argparse
 
-def extract_dictionary(dictionary , output_file):
+import re 
+
+def build_most_freq_tokens(corpus_file ,  token_count): 
+    dico = {}
+    with open(corpus_file, 'r' , encoding='utf8') as f: 
+        for i, line in enumerate(f):
+            tokens = list(filter(None, re.split(';|\,|\s|\.|\?|\!|\؟' , line.strip())))
+            for token in tokens: 
+                if token in dico:
+                    dico[token] += 1 
+                else: 
+                    dico[token] = 1 
+    srt = sorted(dico.items() , key= lambda i: i[1] , reverse=True) 
+    ret = []
+    for i in range(token_count): 
+        ret.append(srt[i][0])
+    return ret 
+
+
+def extract_dictionary(lst , output_file):
     with open(output_file, 'w' , encoding='utf8') as f: 
-        for i in range(len(dictionary)): 
-            f.write(dictionary[i] + '\r\n')
+        for i in range(len(lst)): 
+            f.write(lst[i] + '\n')
+
+
+
+def create_mean_vectors(top_word_file , corpus_file , output_file , line_count = 10000):
+    tokenizer = AutoTokenizer.from_pretrained('xlm-roberta-base')
+    model = XLMRobertaModel.from_pretrained('xlm-roberta-base')
+    dico = {}
+    dico_count = {} 
+    with open('../data/common/fa-top.txt', 'r' , encoding='utf8') as f: 
+        for i, line in enumerate(f):
+            dico_count[line.strip()] =  0
+            dico[line.strip()] = torch.zeros([768])
+
+
+    with open('../data/common/wiki.txt', 'r' , encoding='utf8') as f: 
+        found = 0 
+        not_found = 0 
+        for i, line in enumerate(f):
+            if i > line_count:
+                break
+
+            tokens = tokenizer(line)
+            lst = tokenizer.convert_ids_to_tokens(tokens['input_ids']) 
+            
+            input_ids = torch.tensor(tokens['input_ids']).unsqueeze(0)  
+            outputs = model(input_ids)
+
+
+
+            for ind , item in enumerate(lst): 
+                if item == '<s>' or item == '</s>':
+                    continue 
+                else: 
+                    item = item.replace('_' , '') 
+                    if item in dico_count: 
+                        found += 1 
+                        dico_count[item] += 1 
+                        dico[item] = dico[item].add(outputs[0][0, ind , : ])  
+                    else:
+                        not_found += 1 
+            if i % 1000 == 1:
+                print('Found {} not found {}  Success Rate: {}'.format(found, not_found ,  found / (found + not_found)))
+
+    with open(output_file , 'w' , encoding='utf8') as out: 
+        out.write(str(len(dico)) +  ' ' + str(768) + '\n') 
+        for token in dico: 
+            for x in torch.flatten(dico[token] / dico_count[token]).tolist(): 
+                out.write('{:.4f} '.format(x)) 
+            out.write('\n') 
     
+
 
 def load_simple_embedding(file_name, lang, emb_dim):
     Params = namedtuple('Params' , 'src_emb src_lang emb_dim max_vocab cuda')
@@ -24,9 +93,9 @@ def  step_1():
     """
 
     dico, embedding = load_simple_embedding('data/models/blogs_skipgram_300_3.bin' , 'fa' , 300)
-    extract_dictionary(dico , 'data/common/fa.txt')
+    prep.extract_dictionary(dico , 'data/common/fa.txt')
     dico, embedding = load_simple_embedding('data/models/crawl-300d-2M.vec' , 'en' , 300)
-    extract_dictionary(dico , 'data/common/en.txt')
+    prep.extract_dictionary(dico , 'data/common/en.txt')
 
 
 def  step_2():
@@ -34,8 +103,8 @@ def  step_2():
     This step we load a  model and unify  embeddings - In this case we want to load XLMR as base 
     """
     #print(pipeline('sentiment-analysis')('I was expected to be amazed but no'))
-    tokenizer = AutoTokenizer.from_pretrained('xlm-roberta-base')
-    model = XLMRobertaModel.from_pretrained('xlm-roberta-base')
+    #tokenizer = AutoTokenizer.from_pretrained('xlm-roberta-base')
+    #model = XLMRobertaModel.from_pretrained('xlm-roberta-base')
 
     # tokens = tokenizer.encode("Hello") 
     # print (tokenizer.decode(tokens))
@@ -45,8 +114,10 @@ def  step_2():
     # last_hidden_states = outputs[0]  # The last hidden-state is the first element of the output tuple    
     # print(last_hidden_states.shape)
 
-    build_embedding(model, tokenizer , 768 , 'data/common/fa.txt' , 'data/common/fa-768-xlmroberta.vec')
-    build_embedding(model, tokenizer , 768 , 'data/common/en.txt' , 'data/common/en-768-xlmroberta.vec')
+    #build_embedding(model, tokenizer , 768 , 'data/common/fa.txt' , 'data/common/fa-768-xlmroberta.vec')
+    #build_embedding(model, tokenizer , 768 , 'data/common/en.txt' , 'data/common/en-768Schuster2019cross-xlmroberta.vec')
+
+    create_mean_vectors('../data/common/fa-top.txt' , '../data/common/wiki.txt', '../data/commom/fa-mean.vec')
 
 def build_embedding(model, tokenizer , model_dim , dictionary_file , output_file): 
     print('Processing file ' , dictionary_file)
