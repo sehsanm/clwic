@@ -10,6 +10,7 @@ import re
 
 def build_most_freq_tokens(corpus_file ,  token_count): 
     dico = {}
+    total_tokens = 0 
     with open(corpus_file, 'r' , encoding='utf8') as f: 
         for i, line in enumerate(f):
             tokens = list(filter(None, re.split(';|\,|\s|\.|\?|\!|\؟' , line.strip())))
@@ -18,12 +19,15 @@ def build_most_freq_tokens(corpus_file ,  token_count):
                     dico[token] += 1 
                 else: 
                     dico[token] = 1 
+                total_tokens += 1 
     srt = sorted(dico.items() , key= lambda i: i[1] , reverse=True) 
     ret = []
-    for i in range(token_count): 
+    selected_tokens = 0 
+    for i in range(token_count):
+        selected_tokens += srt[i][1] 
         ret.append(srt[i][0])
+    print ('Total token {}  we selected {}  which is {} percent'.format(total_tokens, selected_tokens,  selected_tokens / total_tokens * 100))
     return ret 
-
 
 def extract_dictionary(lst , output_file):
     with open(output_file, 'w' , encoding='utf8') as f: 
@@ -32,18 +36,16 @@ def extract_dictionary(lst , output_file):
 
 
 
-def create_mean_vectors(top_word_file , corpus_file , output_file , line_count = 10000):
-    tokenizer = AutoTokenizer.from_pretrained('xlm-roberta-base')
-    model = XLMRobertaModel.from_pretrained('xlm-roberta-base')
+def create_mean_vectors(top_word_file , corpus_file , output_file , model , tokenizer , line_count = 10000 ):
     dico = {}
     dico_count = {} 
-    with open('../data/common/fa-top.txt', 'r' , encoding='utf8') as f: 
+    with open(top_word_file, 'r' , encoding='utf8') as f: 
         for i, line in enumerate(f):
             dico_count[line.strip()] =  0
             dico[line.strip()] = torch.zeros([768])
 
 
-    with open('../data/common/wiki.txt', 'r' , encoding='utf8') as f: 
+    with open(corpus_file, 'r' , encoding='utf8') as f: 
         found = 0 
         not_found = 0 
         for i, line in enumerate(f):
@@ -72,12 +74,20 @@ def create_mean_vectors(top_word_file , corpus_file , output_file , line_count =
             if i % 1000 == 1:
                 print('Found {} not found {}  Success Rate: {}'.format(found, not_found ,  found / (found + not_found)))
 
+    non_zero = 0 
+    for t, c in dico_count.items():
+        if c > 0: 
+            non_zero += 1 
     with open(output_file , 'w' , encoding='utf8') as out: 
-        out.write(str(len(dico)) +  ' ' + str(768) + '\n') 
+        out.write(str(non_zero) +  ' ' + str(768) + '\n') 
         for token in dico: 
-            for x in torch.flatten(dico[token] / dico_count[token]).tolist(): 
-                out.write('{:.4f} '.format(x)) 
-            out.write('\n') 
+            if dico_count[token] > 0:
+                out.write(token + ' ')
+                for x in torch.flatten(dico[token] / dico_count[token]).tolist(): 
+                    out.write('{:.4f} '.format(x)) 
+                out.write('\n') 
+    
+
     
 
 
