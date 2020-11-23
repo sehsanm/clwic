@@ -113,8 +113,8 @@ def  step_2():
     This step we load a  model and unify  embeddings - In this case we want to load XLMR as base 
     """
     #print(pipeline('sentiment-analysis')('I was expected to be amazed but no'))
-    #tokenizer = AutoTokenizer.from_pretrained('xlm-roberta-base')
-    #model = XLMRobertaModel.from_pretrained('xlm-roberta-base')
+    tokenizer = AutoTokenizer.from_pretrained('xlm-roberta-base')
+    model = XLMRobertaModel.from_pretrained('xlm-roberta-base')
 
     # tokens = tokenizer.encode("Hello") 
     # print (tokenizer.decode(tokens))
@@ -127,7 +127,7 @@ def  step_2():
     #build_embedding(model, tokenizer , 768 , 'data/common/fa.txt' , 'data/common/fa-768-xlmroberta.vec')
     #build_embedding(model, tokenizer , 768 , 'data/common/en.txt' , 'data/common/en-768Schuster2019cross-xlmroberta.vec')
 
-    create_mean_vectors('../data/common/fa-top.txt' , '../data/common/wiki.txt', '../data/commom/fa-mean.vec')
+    create_mean_vectors('../data/common/fa-top.txt' , '../data/common/wiki.txt', '../data/commom/fa-mean.vec' , model , tokenizer)
 
 def build_embedding(model, tokenizer , model_dim , dictionary_file , output_file): 
     print('Processing file ' , dictionary_file)
@@ -156,6 +156,8 @@ def build_embedding(model, tokenizer , model_dim , dictionary_file , output_file
             out.write('\n') 
 
             
+
+
 
 
 if __name__ == '__main__' : 
