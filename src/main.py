@@ -3,7 +3,7 @@ from  collections import namedtuple
 import  preprocess as prep
 from  transformers  import XLMRobertaModel, AutoTokenizer
 import torch
-
+import numpy as np 
 import argparse
 
 import re 
@@ -35,14 +35,13 @@ def extract_dictionary(lst , output_file):
             f.write(lst[i] + '\n')
 
 
-
 def create_mean_vectors(top_word_file , corpus_file , output_file , model , tokenizer , line_count = 10000 ):
     dico = {}
     dico_count = {} 
     with open(top_word_file, 'r' , encoding='utf8') as f: 
         for i, line in enumerate(f):
             dico_count[line.strip()] =  0
-            dico[line.strip()] = torch.zeros([768])
+            dico[line.strip()] = np.zeros([768])
 
 
     with open(corpus_file, 'r' , encoding='utf8') as f: 
@@ -58,20 +57,23 @@ def create_mean_vectors(top_word_file , corpus_file , output_file , model , toke
             input_ids = torch.tensor(tokens['input_ids']).unsqueeze(0)  
             outputs = model(input_ids)
 
-
+            #print ('Line:',  line )
+            #print('Tokens:' , lst)
 
             for ind , item in enumerate(lst): 
                 if item == '<s>' or item == '</s>':
                     continue 
                 else: 
-                    item = item.replace('_' , '') 
+                    item = item.replace('▁' , '') 
+                    #print(item)
+
                     if item in dico_count: 
                         found += 1 
                         dico_count[item] += 1 
-                        dico[item] = dico[item].add(outputs[0][0, ind , : ])  
+                        dico[item] += outputs[0][0, ind , : ].detach().numpy() 
                     else:
                         not_found += 1 
-            if i % 1000 == 1:
+            if i % 100 == 1:
                 print('Found {} not found {}  Success Rate: {}'.format(found, not_found ,  found / (found + not_found)))
 
     non_zero = 0 
@@ -83,10 +85,15 @@ def create_mean_vectors(top_word_file , corpus_file , output_file , model , toke
         for token in dico: 
             if dico_count[token] > 0:
                 out.write(token + ' ')
-                for x in torch.flatten(dico[token] / dico_count[token]).tolist(): 
+                for x in (dico[token] / dico_count[token]).tolist(): 
                     out.write('{:.4f} '.format(x)) 
                 out.write('\n') 
     
+
+
+    
+
+
 
     
 

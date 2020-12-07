@@ -1,4 +1,3 @@
-import gensim
 import fasttext
 import numpy as np
 
@@ -63,29 +62,6 @@ class TextModel(Model):
             
 
 
-class Word2VecModel(Model):
-
-    def __init__(self, file_name, binary=True):
-        if binary:
-            self.model = gensim.models.KeyedVectors.load_word2vec_format(file_name, binary=True)
-        else:
-            self.model = gensim.models.Word2Vec.load(file_name).wv
-
-    def get_word_vector(self, word):
-        return self.model.get_vector(word)
-
-    def word_exist(self, word):
-        return word in self.model.vocab
-
-    def get_vectors(self):
-        return self.model.vectors
-
-    def get_word_in_index(self, index):
-        return self.model.index2word[index]
-
-    def get_word_index(self, word):
-        return self.model.vocab[word].index
-
 
 class FastTextModel(Model):
 
@@ -120,10 +96,3 @@ class FastTextModel(Model):
         return  self.w2ind[word]
 
 
-def load_model(file_name, binary):
-    if binary:
-        model = gensim.models.KeyedVectors.load_word2vec_format(file_name, binary=True)
-    else:
-        model = gensim.models.Word2Vec.load(file_name).wv
-
-    return model
