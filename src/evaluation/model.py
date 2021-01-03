@@ -36,11 +36,12 @@ class TextModel(Model):
                     word, vect = line.rstrip().split(' ', 1)
                     word = word.lower()
                     vect = np.fromstring(vect, sep=' ')
-                    if np.linalg.norm(vect) == 0:  # avoid to have null embeddings
+                    nrm = np.linalg.norm(vect)
+                    if nrm == 0:  # avoid to have null embeddings
                         vect[0] = 0.01
                     self.word2id[word] = i - 1 
                     self.id2word.append(word)
-                    self.vectors[i - 1] [:] = vect 
+                    self.vectors[i - 1] [:] = vect / nrm 
 
 
     def get_word_vector(self, word):
